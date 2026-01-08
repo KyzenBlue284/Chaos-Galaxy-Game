@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chaos Galaxy: Star Wars Edition</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&display=swap" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:black;
+  font-family:'Orbitron',sans-serif;
+  color:#ffe81f;
+  overflow:hidden;
+}
+
+/* STAR BACKGROUND */
+.stars{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:
+    radial-gradient(2px 2px at 20% 30%,#fff,transparent),
+    radial-gradient(1px 1px at 80% 70%,#fff,transparent),
+    radial-gradient(2px 2px at 50% 10%,#fff,transparent),
+    radial-gradient(1px 1px at 10% 80%,#fff,transparent),
+    radial-gradient(2px 2px at 90% 20%,#fff,transparent);
+  animation: drift 200s linear infinite;
+  z-index:-1;
+}
+@keyframes drift{
+  from{transform:translateY(0)}
+  to{transform:translateY(-4000px)}
+}
+
+/* INTRO */
+#intro{
+  position:fixed;
+  bottom:-100%;
+  width:100%;
+  text-align:center;
+  font-size:32px;
+  line-height:1.6;
+  font-weight:bold;
+  transform:rotateX(25deg);
+  animation:crawl 28s linear forwards;
+}
+@keyframes crawl{
+  from{bottom:-100%}
+  to{bottom:120%}
+}
+
+#skip{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:#000;
+  border:2px solid #ffe81f;
+  color:#ffe81f;
+  padding:10px 15px;
+  cursor:pointer;
+  z-index:5;
+}
+
+/* GAME UI */
+#game{
+  max-width:900px;
+  margin:120px auto;
+  padding:20px;
+  text-align:center;
+  display:none;
+}
+
+.story{
+  background:rgba(0,0,0,.75);
+  border:2px solid #ffe81f;
+  border-radius:18px;
+  padding:25px;
+  min-height:200px;
+  box-shadow:0 0 25px rgba(255,230,0,.45);
+  font-size:20px;
+}
+
+.choices{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+  margin-top:20px;
+}
+
+.choice{
+  background:#000;
+  border:2px solid #ffe81f;
+  color:#ffe81f;
+  padding:14px 26px;
+  cursor:pointer;
+  border-radius:10px;
+  transition:.25s;
+}
+.choice:hover{
+  background:#ffe81f;
+  color:#000;
+  transform:scale(1.08);
+}
+
+#stats{
+  text-align:right;
+  font-size:14px;
+  margin-bottom:10px;
+  opacity:.8;
+}
+
+.rank{
+  font-size:26px;
+  margin-top:20px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="stars"></div>
+
+<button id="skip">Skip Intro</button>
+
+<div id="intro">
+Episode I<br><br>
+CHAOS GALAXY<br><br>
+The Force trembles.<br>
+Darkness spreads.<br>
+Heroes rise.<br><br>
+Your destiny begins now…
+</div>
+
+<div id="game">
+  <div id="stats"></div>
+  <div class="story"><div id="text"></div></div>
+  <div class="choices" id="choices"></div>
+</div>
+
+<script>
+const intro=document.getElementById("intro");
+const game=document.getElementById("game");
+const text=document.getElementById("text");
+const choices=document.getElementById("choices");
+const stats=document.getElementById("stats");
+
+let player={faction:null,name:null,hero:0,chaos:0};
+
+function type(t){
+  text.textContent="";
+  let i=0;
+  let int=setInterval(()=>{
+    text.textContent+=t[i++];
+    if(i>=t.length) clearInterval(int);
+  },20);
+}
+
+function buttons(arr){
+  choices.innerHTML="";
+  arr.forEach(b=>{
+    let btn=document.createElement("button");
+    btn.className="choice";
+    btn.textContent=b.text;
+    btn.onclick=b.action;
+    choices.appendChild(btn);
+  });
+}
+
+function updateStats(){
+  stats.textContent=`Heroism: ${player.hero} | Chaos: ${player.chaos}`;
+}
+
+/* START */
+document.getElementById("skip").onclick=start;
+setTimeout(start,28000);
+
+function start(){
+  intro.style.display="none";
+  game.style.display="block";
+  chooseFaction();
+}
+
+function chooseFaction(){
+  type("Choose your faction:");
+  buttons([
+    {text:"Jedi",action:()=>pickChar("Jedi")},
+    {text:"Sith",action:()=>pickChar("Sith")},
+    {text:"Rebels",action:()=>pickChar("Rebels")}
+  ]);
+}
+
+function pickChar(f){
+  player.faction=f;
+  let list={
+    Jedi:["Luke Skywalker","Yoda","Obi-Wan"],
+    Sith:["Darth Vader","Darth Maul"],
+    Rebels:["Leia Organa","Han Solo"]
+  }[f];
+  type(`Choose your ${f}:`);
+  buttons(list.map(n=>({text:n,action:()=>begin(n)})));
+}
+
+function begin(name){
+  player.name=name;
+  updateStats();
+  type(`${name} stands at the edge of destiny.\n\nWhat will you do first?`);
+  buttons([
+    {text:"Attack the enemy",action:()=>{player.chaos+=2;chapter2("The galaxy trembles as battle erupts.")}},
+    {text:"Seek Allies",action:()=>{player.hero+=2;chapter2("Hope spreads as allies join your cause.")}},
+    {text:"Plan in Secret",action:()=>{player.hero++;player.chaos++;chapter2("Schemes unfold in shadows.")}}
+  ]);
+}
+
+function chapter2(txt){
+  updateStats();
+  type(txt+"\n\nYou encounter a critical choice:");
+  buttons([
+    {text:"Defend the Innocent",action:()=>{player.hero+=2;chapter3("Your courage inspires hope.")}},
+    {text:"Crush Opposition",action:()=>{player.chaos+=2;chapter3("Fear spreads among your enemies.")}},
+    {text:"Seek Knowledge",action:()=>{player.hero++;player.chaos++;chapter3("Ancient secrets reveal new powers.")}}
+  ]);
+}
+
+function chapter3(txt){
+  updateStats();
+  type(txt+"\n\nA mysterious figure approaches…");
+  buttons([
+    {text:"Trust Them",action:()=>{player.hero+=1;player.chaos+=1;chapter4("Allies or deception? Only time will tell.")}},
+    {text:"Attack First",action:()=>{player.chaos+=2;chapter4("Your aggression may have consequences.")}},
+    {text:"Observe Silently",action:()=>{player.hero+=1;chapter4("Patience is a virtue in chaos.")}}
+  ]);
+}
+
+function chapter4(txt){
+  updateStats();
+  type(txt+"\n\nThe final decision looms.");
+  buttons([
+    {text:"Embrace the Light",action:()=>end("light")},
+    {text:"Succumb to Darkness",action:()=>end("dark")},
+    {text:"Forge Your Own Path",action:()=>end("gray")}
+  ]);
+}
+
+function end(path){
+  if(path==="light") player.hero+=3;
+  if(path==="dark") player.chaos+=3;
+  updateStats();
+
+  let rank =
+    player.hero > player.chaos ? "LEGEND OF THE LIGHT" :
+    player.chaos > player.hero ? "HARBINGER OF DARKNESS" :
+    "WALKER BETWEEN WORLDS";
+
+  type(`FINAL RANK:\n\n${rank}\n\nYour actions echo through eternity.\n\nDirected by Kyzenblue284`);
+  buttons([{text:"Play Again",action:()=>location.reload()}]);
+}
+</script>
+
+</body>
+</html>
